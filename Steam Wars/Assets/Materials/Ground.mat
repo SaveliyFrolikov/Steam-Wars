@@ -7,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Metal
-  m_Shader: {fileID: 4800000, guid: 128c5f1edaefa4c4fb3f9f7a4615edb2, type: 3}
-  m_ShaderKeywords: _CLIPPED_ON _SEGMENTED_ON
+  m_Name: Ground
+  m_Shader: {fileID: 4800000, guid: 7cd5de0b884b14f88ab763ef465e1799, type: 3}
+  m_ShaderKeywords: _SEGMENTED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -40,8 +40,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 89e07a5cd42584bed94eb4dd8d1ac8b0, type: 3}
-        m_Scale: {x: 10, y: 10}
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
@@ -58,7 +58,7 @@ Material:
     m_Floats:
     - _AmbientCol: 0
     - _BumpScale: 1
-    - _Clipped: 1
+    - _Clipped: 0
     - _ColBright: 0
     - _ColIntense: 1
     - _Cutoff: 0.5
@@ -67,14 +67,13 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _Lumin: 0.5
+    - _Lumin: 0
     - _MaxLight: 1
     - _Metallic: 0
     - _MinLight: 0.5
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _Offset: 0.8
-    - _OtlWidth: 1
+    - _Offset: 0
     - _Parallax: 0.02
     - _Segmented: 1
     - _ShnIntense: 0
@@ -84,13 +83,12 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _Steps: 2
+    - _Steps: 1
     - _StpSmooth: 0
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.745283, g: 0.745283, b: 0.745283, a: 1}
+    - _Color: {r: 0.4179507, g: 0.7924528, b: 0.33268064, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _OtlColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShnColor: {r: 1, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []
