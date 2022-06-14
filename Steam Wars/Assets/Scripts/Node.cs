@@ -5,6 +5,8 @@ public class Node : IHeapItem<Node>
 {
 	public bool walkable;
 	public bool valid;
+	public bool shootValid;
+	public bool isSelected;
 
 	public Vector3 worldPosition;
 	public int gridX;
