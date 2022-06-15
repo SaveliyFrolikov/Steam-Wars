@@ -11,6 +11,8 @@ public class CameraController : MonoBehaviour
     public Vector3 minZoom;
     public Vector3 maxZoom;
 
+    [Space]
+
     public Transform cameraTransform;
     public Transform followTransform;
 
@@ -21,7 +23,9 @@ public class CameraController : MonoBehaviour
     public float rotationAmount;
     public Vector3 zoomAmount;
 
-    Vector3 newPos;
+    bool moved;
+
+    public Vector3 newPos;
     Quaternion newRot;
     Vector3 newZoom;
 
@@ -33,6 +37,7 @@ public class CameraController : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        moved = false;
     }
 
     private void Start()
@@ -42,23 +47,47 @@ public class CameraController : MonoBehaviour
         newZoom = cameraTransform.localPosition;
     }
 
-    private void LateUpdate()
+    private void Update()
     {
-        if(followTransform != null)
+        
+
+        if (followTransform != null)
         {
+
+            if (followTransform.GetComponent<Unit>().hasShot)
+            {
+                followTransform = null;
+                
+            }
+
             transform.position = followTransform.position;
+            followTransform.GetComponent<Unit>().isSelected = true;
+
+            moved = true;
         }
         else
         {
+            moved = false;
             MovementInput();
             MouseInput();
         }
 
         Zoom();
 
-        if(Input.GetKeyDown(KeyCode.Escape))
+        
+
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             followTransform = null;
+            moved = false;
+        }
+
+        if (!moved)
+        {
+            dragStartPos = Vector3.zero;
+            dragCurrentPos = Vector3.zero;
+            newPos = Vector3.zero;
+            moved = true;
         }
     }
 

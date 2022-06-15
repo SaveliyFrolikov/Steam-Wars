@@ -8,6 +8,7 @@ public class Unit : MonoBehaviour
 
 	public bool hasMoved;
 	public bool hasShot;
+	public bool isSelected;
 
 	public Transform target;
 
@@ -31,6 +32,7 @@ public class Unit : MonoBehaviour
 		animator = GetComponent<Animator>();
 		hasMoved = false;
 		hasShot = false;
+		isSelected = false;
     }
 
     public void Move()
@@ -42,12 +44,25 @@ public class Unit : MonoBehaviour
 			StopCoroutine("FollowPath");
 			StartCoroutine("FollowPath");
 		}
+
+		
+		
 	}
 
     private void Update()
     {
 		animator.SetBool("isMoving", isMoving);
-    }
+
+		if(Input.GetKeyDown(KeyCode.Escape))
+        {
+			isSelected = false;
+        }
+
+		if (isSelected)
+		{
+			CameraController.Instance.followTransform = transform;
+		}
+	}
 
     IEnumerator FollowPath()
 	{
@@ -86,4 +101,9 @@ public class Unit : MonoBehaviour
 			return false;
 		}
 	}
+
+    private void OnMouseDown()
+    {
+		isSelected = true;
+    }
 }

@@ -7,8 +7,12 @@ public class GameManager : MonoBehaviour
 {
     private int turnID;
 
+    public float delay;
+
     GridMap grid;
     Pathfinding pathfinding;
+
+    bool unitSelected;
 
     public Material selected;
     public Material ground;
@@ -57,7 +61,8 @@ public class GameManager : MonoBehaviour
 
         grid.NodeFromWorldPoint(unit.transform.position).unit = unit;
 
-        UpdateMovePositions();
+        unitSelected = false;
+       // UpdateMovePositions();
     }
 
     public void UpdateMovePositions()
@@ -94,6 +99,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        unitSelected = true;
         ms.Stop();
         UnityEngine.Debug.Log(ms.ElapsedMilliseconds + " ms");
     }
@@ -137,13 +143,20 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (!unit.isMoving)
+
+        if (!unit.isMoving && unit.isSelected)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
+            if (!unit.hasMoved)
+            {
+                UpdateMovePositions();
+                delay -= Time.deltaTime;
+            }
+
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetMouseButtonDown(0) && delay < 0)
                 {
                     Node clickedNode = grid.NodeFromWorldPoint(hit.point);
 
@@ -159,9 +172,11 @@ public class GameManager : MonoBehaviour
                     {
                         ResetMaterials();
                         Shoot(hit.point, unit);
-                        unit.hasMoved = false;
+                        //unit.hasMoved = false;
                         unit.hasShot = true;
                         UnityEngine.Debug.Log("Attack!");
+                        CameraController.Instance.followTransform = null;
+                        CameraController.Instance.newPos = Vector3.zero;
                     }
                 }
             }
@@ -229,6 +244,8 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        unit.hasShot = true;
+        unit.isSelected = false;
         ResetMaterials();
     }
 }
