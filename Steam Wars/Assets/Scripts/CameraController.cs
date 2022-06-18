@@ -23,8 +23,6 @@ public class CameraController : MonoBehaviour
     public float rotationAmount;
     public Vector3 zoomAmount;
 
-    bool moved;
-
     public Vector3 newPos;
     Quaternion newRot;
     Vector3 newZoom;
@@ -37,7 +35,6 @@ public class CameraController : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        moved = false;
     }
 
     private void Start()
@@ -53,21 +50,10 @@ public class CameraController : MonoBehaviour
 
         if (followTransform != null)
         {
-
-            if (followTransform.GetComponent<Unit>().hasShot)
-            {
-                followTransform = null;
-                
-            }
-
             transform.position = followTransform.position;
-            followTransform.GetComponent<Unit>().isSelected = true;
-
-            moved = true;
         }
         else
         {
-            moved = false;
             MovementInput();
             MouseInput();
         }
@@ -79,15 +65,6 @@ public class CameraController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             followTransform = null;
-            moved = false;
-        }
-
-        if (!moved)
-        {
-            dragStartPos = Vector3.zero;
-            dragCurrentPos = Vector3.zero;
-            newPos = Vector3.zero;
-            moved = true;
         }
     }
 

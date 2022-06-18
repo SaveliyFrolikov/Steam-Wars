@@ -4,19 +4,24 @@ using System.Collections;
 
 public class Unit : MonoBehaviour
 {
-	public int unitType;
+	public Transform target;
+
+	[Space]
 
 	public bool hasMoved;
 	public bool hasShot;
 	public bool isSelected;
 
-	public Transform target;
+	[Space]
 
 	public int lives;
 	public float speed = 1;
 	public int maxMoveDistance = 5;
 	public int maxShootRange = 10;
 
+	[Space]
+
+	public int unitType;
 	public int teamID;
 
 	Animator animator;
@@ -58,10 +63,11 @@ public class Unit : MonoBehaviour
 			isSelected = false;
         }
 
-		if (isSelected)
+		if (isSelected && teamID == 0)
 		{
 			CameraController.Instance.followTransform = transform;
 		}
+		
 	}
 
     IEnumerator FollowPath()
@@ -94,11 +100,11 @@ public class Unit : MonoBehaviour
 	{
 		if (teamID == unit.teamID)
 		{
-			return true;
+			return false;
 		}
 		else
 		{
-			return false;
+			return true;
 		}
 	}
 

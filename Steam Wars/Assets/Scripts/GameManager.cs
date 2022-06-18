@@ -5,22 +5,23 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    private int turnID;
+    List<Node> validCells;
 
     public float delay;
 
+    [Space]
+
     GridMap grid;
     Pathfinding pathfinding;
-
-    bool unitSelected;
 
     public Material selected;
     public Material ground;
     public Material shot;
 
-    public Unit unit;
+    [Space]
 
-    public Unit[] units;
+    public Unit unit;
+    [SerializeField] List<Unit> allUnits;
 
     public static GameManager Instance;
 
@@ -29,7 +30,15 @@ public class GameManager : MonoBehaviour
         Instance = this;
         grid = GetComponent<GridMap>();
         pathfinding = GetComponent<Pathfinding>();
-        turnID = 0;
+        validCells = new List<Node>();
+    }
+
+    
+
+    private void Start()
+    {
+
+        ResetMaterials();
     }
 
     private void ResetMaterials()
@@ -40,6 +49,7 @@ public class GameManager : MonoBehaviour
             {
                 grid.grid[x, y].valid = false;
                 grid.grid[x, y].shootValid = false;
+                validCells.Clear();
 
                 if (grid.cells[x, y] != null)
                 {
@@ -50,30 +60,18 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-    }
 
-    private void Start()
-    {
-        foreach (Unit u in units)
+        foreach (Unit u in allUnits)
         {
             grid.NodeFromWorldPoint(u.transform.position).unit = u;
         }
-
-        grid.NodeFromWorldPoint(unit.transform.position).unit = unit;
-
-        unitSelected = false;
-       // UpdateMovePositions();
     }
 
     public void UpdateMovePositions()
     {
-        Stopwatch ms = new Stopwatch();
-        ms.Start();
-
         ResetMaterials();
         
         grid.GetXY(unit.transform.position, out int unitX, out int unitY);
-
 
         for (int x = unitX - unit.maxMoveDistance; x <= unit.maxMoveDistance + unitX + 1; x++)
         {
@@ -85,30 +83,29 @@ public class GameManager : MonoBehaviour
                 {
                     List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false);
 
-
                     if (path != null)
                     {
-                        if (path.Count < unit.maxMoveDistance)
+                        Node node = grid.NodeFromWorldPoint(cell.transform.position);
+
+                        if (path.Count < unit.maxMoveDistance && node.unit == null)
                         {
-                            cell.GetComponent<MeshRenderer>().material = selected;
-                            Node node = grid.NodeFromWorldPoint(cell.transform.position);
+                            if(unit.teamID == 0)
+                            {
+                                cell.GetComponent<MeshRenderer>().material = selected;
+                            }
                             node.valid = true;
+                            validCells.Add(node);
                         }
                     }
                 }
             }
         }
 
-        unitSelected = true;
-        ms.Stop();
-        UnityEngine.Debug.Log(ms.ElapsedMilliseconds + " ms");
+        
     }
 
     public void UpdateShootPositions()
     {
-        Stopwatch ms = new Stopwatch();
-        ms.Start();
-
         ResetMaterials();
 
         grid.GetXY(unit.transform.position, out int unitX, out int unitY);
@@ -123,12 +120,15 @@ public class GameManager : MonoBehaviour
                 {
                     List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false);
 
-
                     if (path != null)
                     {
                         if (path.Count < unit.maxShootRange)
                         {
-                            cell.GetComponent<MeshRenderer>().material = selected;
+                            if (unit.teamID == 0)
+                            {
+                                cell.GetComponent<MeshRenderer>().material = selected;
+                            }
+
                             Node node = grid.NodeFromWorldPoint(cell.transform.position);
                             node.shootValid = true;
                         }
@@ -137,100 +137,137 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        ms.Stop();
-        UnityEngine.Debug.Log(ms.ElapsedMilliseconds + " ms");
+        
     }
 
     private void Update()
     {
+        unit = TurnManager.Instance.currentUnit;
 
-        if (!unit.isMoving && unit.isSelected)
+        if(unit != null)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            if (!unit.hasMoved)
+            if(unit.teamID == 0)
             {
-                UpdateMovePositions();
-                delay -= Time.deltaTime;
-            }
-
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                if (Input.GetMouseButtonDown(0) && delay < 0)
+                if (!unit.isMoving && unit.isSelected)
                 {
-                    Node clickedNode = grid.NodeFromWorldPoint(hit.point);
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                    if (clickedNode.valid && !unit.hasMoved)
+                    if (Input.GetKeyDown(KeyCode.N))
                     {
-                        GameObject cell = grid.CellFromWorldPoint(hit.point);
+                        Skip();
+                    }
+
+                    if (!unit.hasMoved)
+                    {
+                        UpdateMovePositions();
+                        delay -= Time.deltaTime;
+                    }
+
+                    if (Physics.Raycast(ray, out RaycastHit hit))
+                    {
+                        if (Input.GetMouseButtonDown(0))// && delay < 0)
+                        {
+                            Node clickedNode = grid.NodeFromWorldPoint(hit.point);
+
+                            if (clickedNode.valid && !unit.hasMoved)
+                            {
+                                GameObject cell = grid.CellFromWorldPoint(hit.point);
+                                unit.target.position = cell.transform.position;
+                                grid.NodeFromWorldPoint(hit.point);
+                                unit.Move();
+                            }
+
+                            if (clickedNode.shootValid && unit.hasMoved && !unit.hasShot)
+                            {
+                                ResetMaterials();
+                                Shoot(hit.point);
+                                unit.hasMoved = true;
+                                unit.hasShot = true;
+                                TurnManager.Instance.NextUnit();
+                                UnityEngine.Debug.Log("Attack!");
+                                CameraController.Instance.followTransform = null;
+                                CameraController.Instance.newPos = Vector3.zero;
+                                unit.isSelected = false;
+                            }
+                        }
+                    }
+
+                    if (unit.hasMoved && !unit.hasShot)
+                    {
+                        Node sNode = grid.NodeFromWorldPoint(hit.point);
+
+                        bool allValid = true;
+
+                        if (sNode.shootValid)
+                        {
+                            for (int x = 0; x < grid.gridWorldSize.x; x++)
+                            {
+                                for (int y = 0; y < grid.gridWorldSize.y; y++)
+                                {
+                                    if (grid.grid[x, y].shootValid)
+                                    {
+                                        grid.cells[x, y].GetComponent<MeshRenderer>().material = selected;
+                                    }
+                                }
+                            }
+
+                            for (int x = 0; x <= 1; x++)
+                            {
+                                for (int y = 0; y <= 1; y++)
+                                {
+                                    Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
+                                    allValid = allValid && node.shootValid;
+                                }
+                            }
+
+                            if (unit.unitType == 2 && allValid)
+                            {
+                                for (int x = 0; x <= 1; x++)
+                                {
+                                    for (int y = 0; y <= 1; y++)
+                                    {
+                                        GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
+                                        cell.GetComponent<MeshRenderer>().material = shot;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                UnityEngine.Debug.Log("Enemy Turn");
+                CameraController.Instance.followTransform = null;
+                CameraController.Instance.newPos = Vector3.zero;
+
+                if(!unit.isMoving && unit.isSelected)
+                {
+                    if (!unit.hasMoved)
+                    {
+                        UpdateMovePositions();
+
+                        Node randomNode = validCells[Random.Range(0, validCells.Count + 1)];
+                        Vector3 randomPos = randomNode.worldPosition;
+
+                        GameObject cell = grid.CellFromWorldPoint(randomPos);
                         unit.target.position = cell.transform.position;
-                        grid.NodeFromWorldPoint(hit.point);
+                        grid.NodeFromWorldPoint(randomPos);
                         unit.Move();
                     }
 
-                    if (clickedNode.shootValid && unit.hasMoved && !unit.hasShot)
+                    if(unit.hasMoved && !unit.hasShot)
                     {
-                        ResetMaterials();
-                        Shoot(hit.point, unit);
-                        //unit.hasMoved = false;
-                        unit.hasShot = true;
-                        UnityEngine.Debug.Log("Attack!");
-                        CameraController.Instance.followTransform = null;
-                        CameraController.Instance.newPos = Vector3.zero;
+
                     }
                 }
             }
-
-            if(unit.hasMoved && !unit.hasShot)
-            {
-                Node sNode = grid.NodeFromWorldPoint(hit.point);
-
-                bool allValid = true;
-
-                if(sNode.shootValid)
-                {
-                    for (int x = 0; x < grid.gridWorldSize.x; x++)
-                    {
-                        for (int y = 0; y < grid.gridWorldSize.y; y++)
-                        {
-                            if (grid.grid[x, y].shootValid)
-                            {
-                                grid.cells[x, y].GetComponent<MeshRenderer>().material = selected;
-                            }
-                        }
-                    }
-
-                    for (int x = 0; x <= 1; x++)
-                    {
-                        for (int y = 0; y <= 1; y++)
-                        {
-                            Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
-                            allValid = allValid && node.shootValid;
-                        }
-                    }
-
-                    if (unit.unitType == 2 && allValid)
-                    {
-                        for (int x = 0; x <= 1; x++)
-                        {
-                            for (int y = 0; y <= 1; y++)
-                            {
-                                GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
-                                cell.GetComponent<MeshRenderer>().material = shot;
-                            }
-                        }
-                    }
-                }
-            }
-
-           
-
         }
     }
 
-    void Shoot(Vector3 clickedPos, Unit unitThatShot)
+    void Shoot(Vector3 clickedPos)
     {
-        if (unitThatShot.unitType == 2)
+        if (unit.unitType == 2)
         {
             for (int x = 0; x <= 1; x++)
             {
@@ -239,7 +276,7 @@ public class GameManager : MonoBehaviour
                     GameObject cell = grid.CellFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
                     Node node = grid.NodeFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
                     cell.GetComponent<MeshRenderer>().material = shot;
-                    if(node.unit != null) node.unit.lives -= 1;
+                    if(node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= 1;
                 }
             }
         }
@@ -247,6 +284,17 @@ public class GameManager : MonoBehaviour
         unit.hasShot = true;
         unit.isSelected = false;
         ResetMaterials();
+    }
+
+    public void Skip()
+    {
+        ResetMaterials();
+        unit.hasMoved = true;
+        unit.hasShot = true;
+        TurnManager.Instance.NextUnit();
+        CameraController.Instance.followTransform = null;
+        CameraController.Instance.newPos = Vector3.zero;
+        unit.isSelected = false;
     }
 }
 
