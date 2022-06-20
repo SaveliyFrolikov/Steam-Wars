@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class TurnManager : MonoBehaviour
 {
-    [SerializeField] List<Unit> allUnits;
-    List<Unit> team1;
-    List<Unit> team2;
+    public List<Unit> allUnits;
+    public List<Unit> team1;
+    public List<Unit> team2;
 
     public int turn = 0;
     public float turnDelay;
@@ -60,13 +60,30 @@ public class TurnManager : MonoBehaviour
             teamChanged = true;
         }
 
-        if (TeamMoved(team2) && teamChanged)
+        if(TeamMoved(team1) && TeamMoved(team2))
         {
+            foreach(Unit unit in allUnits)
+            {
+                unit.hasMoved = false;
+                unit.hasShot = false;
+                unit.isSelected = false;
+            }
+
             turn++;
             unitID = 0;
             currentUnit = team1[unitID];
+            currentUnit.isSelected = true;
             currentTeam = 1;
             teamChanged = false;
+        }
+
+        if(team1.Count == 0)
+        {
+            Debug.Log("YOU LOST");
+        }
+        else if(team2.Count == 0)
+        {
+            Debug.Log("YOU WON");
         }
     }
 

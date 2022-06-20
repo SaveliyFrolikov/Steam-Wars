@@ -5,6 +5,7 @@ using System.Collections;
 public class Unit : MonoBehaviour
 {
 	public Transform target;
+	public GameObject destroyedVersion;
 
 	[Space]
 
@@ -18,6 +19,7 @@ public class Unit : MonoBehaviour
 	public float speed = 1;
 	public int maxMoveDistance = 5;
 	public int maxShootRange = 10;
+	public int viewRange = 5;
 
 	[Space]
 
@@ -67,6 +69,24 @@ public class Unit : MonoBehaviour
 		{
 			CameraController.Instance.followTransform = transform;
 		}
+
+		if(lives <= 0)
+        {
+			GameManager.Instance.allUnits.Remove(this);
+			TurnManager.Instance.allUnits.Remove(this);
+
+			if(teamID == 0)
+            {
+				TurnManager.Instance.team1.Remove(this);
+            }
+            else
+            {
+				TurnManager.Instance.team2.Remove(this);
+			}
+
+			Instantiate(destroyedVersion, transform.position, transform.rotation);
+			Destroy(gameObject);
+		}
 		
 	}
 
@@ -107,9 +127,4 @@ public class Unit : MonoBehaviour
 			return true;
 		}
 	}
-
-    private void OnMouseDown()
-    {
-		isSelected = true;
-    }
 }

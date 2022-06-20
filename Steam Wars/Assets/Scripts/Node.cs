@@ -7,6 +7,7 @@ public class Node : IHeapItem<Node>
 	public bool valid;
 	public bool shootValid;
 	public bool isSelected;
+	public bool isVisible;
 
 	public Vector3 worldPosition;
 	public int gridX;
