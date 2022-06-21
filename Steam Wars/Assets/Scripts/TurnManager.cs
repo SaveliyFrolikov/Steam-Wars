@@ -14,7 +14,7 @@ public class TurnManager : MonoBehaviour
     public Unit currentUnit;
 
     int unitID = 0;
-    int currentTeam = 1;
+    public int currentTeam = 1;
 
     public static TurnManager Instance;
 
@@ -44,7 +44,16 @@ public class TurnManager : MonoBehaviour
 
     private void Update()
     {
-        if(currentUnit == null)
+        if (team1.Count == 0)
+        {
+            Debug.Log("YOU LOST");
+        }
+        else if (team2.Count == 0)
+        {
+            Debug.Log("YOU WON");
+        }
+
+        if (currentUnit == null)
         {
             unitID = 0;
             currentTeam = 1;
@@ -75,15 +84,6 @@ public class TurnManager : MonoBehaviour
             currentUnit.isSelected = true;
             currentTeam = 1;
             teamChanged = false;
-        }
-
-        if(team1.Count == 0)
-        {
-            Debug.Log("YOU LOST");
-        }
-        else if(team2.Count == 0)
-        {
-            Debug.Log("YOU WON");
         }
     }
 

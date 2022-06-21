@@ -25,7 +25,7 @@ public class CameraController : MonoBehaviour
 
     public Vector3 newPos;
     Quaternion newRot;
-    Vector3 newZoom;
+    [HideInInspector]public Vector3 newZoom;
 
     Vector3 dragStartPos;
     Vector3 dragCurrentPos;
@@ -54,8 +54,7 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            MovementInput();
-            MouseInput();
+            transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * movementTime);
         }
 
         Zoom();
@@ -120,7 +119,7 @@ public class CameraController : MonoBehaviour
             newPos.z = -26;
         }
 
-        transform.position = Vector3.Lerp(transform.position, newPos, Time.deltaTime * movementTime);
+        
 
         
 
@@ -180,27 +179,31 @@ public class CameraController : MonoBehaviour
     {
         if (Input.mouseScrollDelta.y != 0)
         {
-            newZoom += Input.mouseScrollDelta.y * zoomAmount;
+            newZoom.y += zoomAmount.y * 1.5f * Input.mouseScrollDelta.y;
+            newZoom.z += zoomAmount.z * Input.mouseScrollDelta.y;
         }
 
         if (Input.GetKey(KeyCode.R))
         {
-            newZoom += zoomAmount;
+            //newZoom += zoomAmount;
+            newZoom.y += zoomAmount.y * 1.5f;
+            newZoom.z += zoomAmount.z;
         }
 
         if (Input.GetKey(KeyCode.F))
         {
-            newZoom -= zoomAmount;
+            newZoom.y -= zoomAmount.y * 1.5f;
+            newZoom.z -= zoomAmount.z;
         }
 
-        if(newZoom.y > 50)
+        if(newZoom.y > 43.5)
         {
-            newZoom.y = 50;
+            newZoom.y = 43.5f;
         }
 
-        if (newZoom.z < -50)
+        if (newZoom.z < -29)
         {
-            newZoom.z = -50;
+            newZoom.z = -29;
         }
 
         if (newZoom.y < 3)
@@ -208,9 +211,9 @@ public class CameraController : MonoBehaviour
             newZoom.y = 3;
         }
 
-        if (newZoom.z > -3)
+        if (newZoom.z > -2)
         {
-            newZoom.z = -3;
+            newZoom.z = -2;
         }
 
         cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, newZoom, Time.deltaTime * movementTime);

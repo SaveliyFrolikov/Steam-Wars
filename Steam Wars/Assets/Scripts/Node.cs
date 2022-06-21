@@ -9,6 +9,9 @@ public class Node : IHeapItem<Node>
 	public bool isSelected;
 	public bool isVisible;
 
+	public int material;
+	public int fogMaterial;
+
 	public Vector3 worldPosition;
 	public int gridX;
 	public int gridY;

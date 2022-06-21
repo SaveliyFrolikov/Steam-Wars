@@ -2,19 +2,25 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
     List<Node> validCells;
-    List<GameObject> debugList;
+    List<Node> debugList;
 
-    
+    public GameObject stateText;
+    public GameObject number;
+    public GameObject numberParent;
 
     public bool canSeeUnit;
+
+    bool zoom;
 
     public float delay;
 
     bool allValid = true;
+    bool enemyTurn;
 
     [Space]
 
@@ -22,8 +28,17 @@ public class GameManager : MonoBehaviour
     Pathfinding pathfinding;
 
     public Material selected;
-    public Material ground;
+    public Material grass;
+    public Material grass2;
+
     public Material shot;
+
+    public Material fogGround;
+    public Material fogGround2;
+
+    public Material fogSelected;
+    
+    public Material fogShot;
 
     [Space]
 
@@ -39,16 +54,19 @@ public class GameManager : MonoBehaviour
         grid = GetComponent<GridMap>();
         pathfinding = GetComponent<Pathfinding>();
         validCells = new List<Node>();
-        debugList = new List<GameObject>();
+        debugList = new List<Node>();
         visibleCells = new List<Node>();
+        zoom = false;
     }
 
     
 
     private void Start()
     {
+        
 
         ResetMaterials();
+        Numbers();
     }
 
     private void ResetMaterials()
@@ -57,23 +75,62 @@ public class GameManager : MonoBehaviour
         {
             for (int y = 0; y < grid.gridWorldSize.y; y++)
             {
+                if (grid.grid[x, y] != null)
+                {
+                    grid.grid[x, y].unit = null;
+                }
+
                 grid.grid[x, y].valid = false;
                 grid.grid[x, y].shootValid = false;
                 validCells.Clear();
 
                 if (grid.cells[x, y] != null)
                 {
-                    if (grid.cells[x, y].activeInHierarchy && !debugList.Contains(grid.cells[x, y]))
+                    if (grid.cells[x, y].activeInHierarchy)// && !debugList.Contains(grid.cells[x, y]))
                     {
-                        grid.cells[x, y].GetComponent<MeshRenderer>().material = ground;
-                        GameObject fog = grid.cells[x, y].transform.GetChild(0).gameObject;
-                        fog.GetComponent<MeshRenderer>().material = ground;
-                    }
-                }
+                        if(grid.grid[x, y].material == 0)
+                        {
+                            grid.cells[x, y].GetComponent<MeshRenderer>().material = grass;
+                        }
 
-                if (grid.grid[x, y] != null)
-                {
-                    grid.grid[x, y].unit = null;
+                        if (grid.grid[x, y].material == 1)
+                        {
+                            grid.cells[x, y].GetComponent<MeshRenderer>().material = grass2;
+                        }
+
+                        GameObject fog = grid.cells[x, y].transform.GetChild(0).gameObject;
+
+                        if (grid.grid[x, y].fogMaterial == 0)
+                        {
+                            fog.GetComponent<MeshRenderer>().material = fogGround;
+                        }
+
+                        if (grid.grid[x, y].fogMaterial == 1)
+                        {
+                            fog.GetComponent<MeshRenderer>().material = fogGround2;
+                        }
+
+                        if (grid.grid[x, y].unit != null)
+                        {
+                            if (!grid.grid[x, y].isVisible)
+                            {
+                                if (grid.grid[x, y].unit.teamID == 1)
+                                {
+                                    GameObject smoke = grid.grid[x, y].unit.transform.GetChild(1).gameObject;
+                                    GameObject smoke2 = grid.grid[x, y].unit.transform.GetChild(2).gameObject;
+                                    smoke.SetActive(false);
+                                    smoke2.SetActive(false);
+                                }
+                            }
+                            else
+                            {
+                                GameObject smoke = grid.grid[x, y].unit.transform.GetChild(1).gameObject;
+                                GameObject smoke2 = grid.grid[x, y].unit.transform.GetChild(2).gameObject;
+                                smoke.SetActive(false);
+                                smoke2.SetActive(false);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -84,6 +141,25 @@ public class GameManager : MonoBehaviour
         }
 
         //visibleCells.Clear();
+    }
+
+    void Numbers()
+    {
+        for (int i = 0; i < grid.gridWorldSize.x; i++)
+        {
+            GameObject newNumber = Instantiate(number);
+            newNumber.transform.parent = numberParent.transform;
+            newNumber.GetComponent<TextMeshPro>().text = (i + 1).ToString();
+            newNumber.transform.position = new Vector3(-24.5f + i, 2, -26);
+        }
+
+        for (int i = 0; i < grid.gridWorldSize.y; i++)
+        {
+            GameObject newNumber = Instantiate(number);
+            newNumber.transform.parent = numberParent.transform;
+            newNumber.GetComponent<TextMeshPro>().text = (i + 1).ToString();
+            newNumber.transform.position = new Vector3(-26, 2, -24.5f + i);
+        }
     }
 
     public void ResetFog()
@@ -132,12 +208,13 @@ public class GameManager : MonoBehaviour
                             if (path.Count < thisUnit.viewRange)
                             {
                                 Node node = grid.NodeFromWorldPoint(cell.transform.position);
-                                node.isVisible = true;
+                                
 
                                 if (thisUnit.teamID == 0)
                                 {
                                     GameObject fog = cell.transform.GetChild(0).gameObject;
                                     fog.SetActive(false);
+                                    node.isVisible = true;
                                 }
                                 else
                                 {
@@ -178,7 +255,7 @@ public class GameManager : MonoBehaviour
                             {
                                 cell.GetComponent<MeshRenderer>().material = selected;
                                 GameObject fog = cell.transform.GetChild(0).gameObject;
-                                fog.GetComponent<MeshRenderer>().material = selected;
+                                fog.GetComponent<MeshRenderer>().material = fogSelected;
 
                             }
                             node.valid = true;
@@ -216,7 +293,7 @@ public class GameManager : MonoBehaviour
                             {
                                 cell.GetComponent<MeshRenderer>().material = selected;
                                 GameObject fog = cell.transform.GetChild(0).gameObject;
-                                fog.GetComponent<MeshRenderer>().material = selected;
+                                fog.GetComponent<MeshRenderer>().material = fogSelected;
                             }
 
                             Node node = grid.NodeFromWorldPoint(cell.transform.position);
@@ -230,25 +307,24 @@ public class GameManager : MonoBehaviour
 
         
     }
-
-    private void LateUpdate()
-    {
-        if(unit != null)
-        {
-            
-        }
-    }
-
+    
     private void Update()
     {
         unit = TurnManager.Instance.currentUnit;
 
         if(unit != null)
         {
+            HideSmoke();
             CheckForVisibility();
 
             if (unit.teamID == 0)
             {
+                if(enemyTurn == true)
+                {
+                    enemyTurn = false;
+                    stateText.GetComponent<TextMeshProUGUI>().text = "Your Turn";
+                }
+
                 if (!unit.isMoving && unit.isSelected)
                 {
                     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -261,7 +337,11 @@ public class GameManager : MonoBehaviour
                     if (!unit.hasMoved)
                     {
                         UpdateMovePositions();
-                        delay -= Time.deltaTime;
+                        if(!zoom)
+                        {
+                            CameraController.Instance.newZoom = new Vector3(0, 12, -8);
+                            zoom = true;
+                        }
                     }
 
                     if (Physics.Raycast(ray, out RaycastHit hit))
@@ -276,12 +356,40 @@ public class GameManager : MonoBehaviour
                                 unit.target.position = cell.transform.position;
                                 grid.NodeFromWorldPoint(hit.point);
                                 unit.Move();
+                                zoom = false;
                             }
 
                             if (allValid && unit.hasMoved && !unit.hasShot)
                             {
                                 ResetMaterials();
                                 Shoot(hit.point);
+
+                                bool missed = true;
+
+                                foreach(Node node in debugList)
+                                {
+                                    if(node.unit != null)
+                                    {
+                                        if(node.unit.teamID == 1)
+                                        {
+                                            missed = false;
+                                            if(node.unit.lives > 0)
+                                            {
+                                                stateText.GetComponent<TextMeshProUGUI>().text = "Hit";
+                                            }
+                                            else
+                                            {
+                                                stateText.GetComponent<TextMeshProUGUI>().text = "Killed";
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if(missed)
+                                {
+                                    stateText.GetComponent<TextMeshProUGUI>().text = "Missed";
+                                }
+
                                 unit.hasMoved = true;
                                 unit.hasShot = true;
                                 TurnManager.Instance.NextUnit();
@@ -296,6 +404,11 @@ public class GameManager : MonoBehaviour
                     if (unit.hasMoved && !unit.hasShot)
                     {
                         Node sNode = grid.NodeFromWorldPoint(hit.point);
+                        if(!zoom)
+                        {
+                            CameraController.Instance.newZoom = new Vector3(0, 28.38443f, -18.92296f);
+                            zoom = true;
+                        }
 
                         allValid = true;
 
@@ -309,7 +422,7 @@ public class GameManager : MonoBehaviour
                                     {
                                         grid.cells[x, y].GetComponent<MeshRenderer>().material = selected;
                                         GameObject fog = grid.cells[x, y].transform.GetChild(0).gameObject;
-                                        fog.GetComponent<MeshRenderer>().material = selected;
+                                        fog.GetComponent<MeshRenderer>().material = fogSelected;
                                     }
                                 }
                             }
@@ -332,7 +445,7 @@ public class GameManager : MonoBehaviour
                                         GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
                                         cell.GetComponent<MeshRenderer>().material = shot;
                                         GameObject fog = cell.transform.GetChild(0).gameObject;
-                                        fog.GetComponent<MeshRenderer>().material = shot;
+                                        fog.GetComponent<MeshRenderer>().material = fogShot;
                                     }
                                 }
                             }
@@ -346,19 +459,28 @@ public class GameManager : MonoBehaviour
                 CameraController.Instance.followTransform = null;
                 CameraController.Instance.newPos = Vector3.zero;
 
-                if(!unit.isMoving && unit.isSelected)
+                delay -= Time.deltaTime;
+
+                if(!enemyTurn && delay < 0)
                 {
-                    Vector3 unitPos;
+                    enemyTurn = true;
+                    stateText.GetComponent<TextMeshProUGUI>().text = "Enemy Turn";
+                }
+
+                if(!unit.isMoving && unit.isSelected && delay < 0)
+                {
+                    delay = 1;
 
                     if (!unit.hasMoved)
                     {
+                        canSeeUnit = false;
+
                         foreach (Node node in visibleCells)
                         {
                             if (node.unit != null)
                             {
                                 if (node.unit.teamID == 0)
                                 {
-                                    unitPos = node.worldPosition;
                                     canSeeUnit = true;
                                     break;
                                 }
@@ -447,6 +569,7 @@ public class GameManager : MonoBehaviour
     void Shoot(Vector3 clickedPos)
     {
         unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+        debugList.Clear();
 
         if (unit.unitType == 2)
         {
@@ -458,15 +581,16 @@ public class GameManager : MonoBehaviour
                     Node node = grid.NodeFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
                     cell.GetComponent<MeshRenderer>().material = shot;
                     GameObject fog = grid.cells[x, y].transform.GetChild(0).gameObject;
-                    fog.GetComponent<MeshRenderer>().material = shot;
-                    if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= 1;
-                    debugList.Add(cell);
+                    fog.GetComponent<MeshRenderer>().material = fogShot;
+                    if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= unit.damage;
+                    debugList.Add(node);
                 }
             }
         }
 
         unit.hasShot = true;
         unit.isSelected = false;
+        zoom = false;
         ResetMaterials();
     }
 
@@ -480,5 +604,43 @@ public class GameManager : MonoBehaviour
         CameraController.Instance.newPos = Vector3.zero;
         unit.isSelected = false;
     }
+
+    void HideSmoke()
+    {
+        for (int x = 0; x < grid.gridWorldSize.x; x++)
+        {
+            for (int y = 0; y < grid.gridWorldSize.y; y++)
+            {
+                if (grid.cells[x, y] != null)
+                {
+                    if (grid.cells[x, y].activeInHierarchy)
+                    {
+                        if (grid.grid[x, y].unit != null)
+                        {
+                            if (!grid.grid[x, y].isVisible)
+                            {
+                                if (grid.grid[x, y].unit.teamID == 1)
+                                {
+                                    GameObject smoke = grid.grid[x, y].unit.transform.GetChild(1).gameObject;
+                                    GameObject smoke2 = grid.grid[x, y].unit.transform.GetChild(2).gameObject;
+                                    smoke.SetActive(false);
+                                    smoke2.SetActive(false);
+                                }
+                            }
+                            else
+                            {
+                                GameObject smoke = grid.grid[x, y].unit.transform.GetChild(1).gameObject;
+                                GameObject smoke2 = grid.grid[x, y].unit.transform.GetChild(2).gameObject;
+                                smoke.SetActive(true);
+                                smoke2.SetActive(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    
 }
 

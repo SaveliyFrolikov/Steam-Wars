@@ -20,6 +20,7 @@ public class Unit : MonoBehaviour
 	public int maxMoveDistance = 5;
 	public int maxShootRange = 10;
 	public int viewRange = 5;
+	public int damage = 1;
 
 	[Space]
 
@@ -51,9 +52,6 @@ public class Unit : MonoBehaviour
 			StopCoroutine("FollowPath");
 			StartCoroutine("FollowPath");
 		}
-
-		
-		
 	}
 
     private void Update()
