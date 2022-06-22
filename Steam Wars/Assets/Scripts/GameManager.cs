@@ -9,9 +9,14 @@ public class GameManager : MonoBehaviour
     List<Node> validCells;
     List<Node> debugList;
 
+    public ParticleSystem smoke;
+
     public GameObject stateText;
     public GameObject number;
     public GameObject numberParent;
+
+    public GameObject destroyedTree;
+    public GameObject destroyedTrain;
 
     public bool canSeeUnit;
 
@@ -63,10 +68,9 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        
-
         ResetMaterials();
         Numbers();
+        ExtraObjects();
     }
 
     private void ResetMaterials()
@@ -162,6 +166,34 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void ExtraObjects()
+    {
+        for (int x = 0; x < grid.gridWorldSize.x; x++)
+        {
+            for (int y = 0; y < grid.gridWorldSize.y; y++)
+            {
+                int random = Random.Range(1, 201);
+
+                if((random == 1 || random == 2) && grid.grid[x, y].unit == null)
+                {
+                    grid.cells[x, y].transform.GetChild(1).gameObject.SetActive(true);
+                    grid.grid[x, y].walkable = false;
+                    grid.grid[x, y].extra = 1;
+                }
+                else if(random == 3 && grid.grid[x, y].unit == null)
+                {
+                    grid.cells[x, y].transform.GetChild(2).gameObject.SetActive(true);
+                    grid.grid[x, y].walkable = false;
+                    grid.grid[x, y].extra = 3;
+                }
+                else
+                {
+                    grid.grid[x, y].extra = 0;
+                }
+            }
+        }
+    }
+
     public void ResetFog()
     {
         for (int x = 0; x < grid.gridWorldSize.x; x++)
@@ -201,7 +233,7 @@ public class GameManager : MonoBehaviour
 
                     if (cell != null)
                     {
-                        List<Vector3> path = pathfinding.FindPath(thisUnit.transform.position, new Vector3(x, 0, y), false);
+                        List<Vector3> path = pathfinding.FindPath(thisUnit.transform.position, new Vector3(x, 0, y), false, false);
 
                         if (path != null)
                         {
@@ -243,7 +275,7 @@ public class GameManager : MonoBehaviour
 
                 if (cell != null)
                 {
-                    List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false);
+                    List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false, true);
 
                     if (path != null)
                     {
@@ -283,7 +315,7 @@ public class GameManager : MonoBehaviour
 
                 if (cell != null)
                 {
-                    List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false);
+                    List<Vector3> path = pathfinding.FindPath(unit.transform.position, new Vector3(x, 0, y), false, false);
 
                     if (path != null)
                     {
@@ -584,6 +616,26 @@ public class GameManager : MonoBehaviour
                     fog.GetComponent<MeshRenderer>().material = fogShot;
                     if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= unit.damage;
                     debugList.Add(node);
+                    Instantiate(smoke, cell.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+
+                    if(node.extra == 1 || node.extra == 2)
+                    {
+                        node.walkable = true;
+                        GameObject explosion = Instantiate(destroyedTree);
+                        explosion.transform.parent = cell.transform;
+                        explosion.transform.position = cell.transform.GetChild(1).position;
+                        cell.transform.GetChild(1).gameObject.SetActive(false);
+                    }
+                    else if(node.extra == 3)
+                    {
+                        node.walkable = true;
+                        GameObject explosion = Instantiate(destroyedTrain);
+                        explosion.transform.parent = cell.transform;
+                        explosion.transform.position = cell.transform.GetChild(2).position;
+                        cell.transform.GetChild(2).gameObject.SetActive(false);
+                    }
+
+                    unit.transform.GetChild(4).GetComponent<ParticleSystem>().Play();
                 }
             }
         }

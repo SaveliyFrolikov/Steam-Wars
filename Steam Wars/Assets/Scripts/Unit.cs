@@ -45,7 +45,7 @@ public class Unit : MonoBehaviour
 
     public void Move()
 	{
-		path = Pathfinding.Instance.FindPath(transform.position, target.position, true);
+		path = Pathfinding.Instance.FindPath(transform.position, target.position, true, true);
 		if (path != null && path.Count > 0)
 		{
 			targetIndex = 0;

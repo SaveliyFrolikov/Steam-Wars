@@ -8,9 +8,11 @@ public class Node : IHeapItem<Node>
 	public bool shootValid;
 	public bool isSelected;
 	public bool isVisible;
+	
 
 	public int material;
 	public int fogMaterial;
+	public int extra;
 
 	public Vector3 worldPosition;
 	public int gridX;
@@ -51,18 +53,6 @@ public class Node : IHeapItem<Node>
 			heapIndex = value;
 		}
 	}
-
-	//public int ComapreTo(Node nodeToCompare)
-	//{
-	//    int compare = fCost.CompareTo(nodeToCompare.fCost);
-
-	//    if (compare == 0)
-	//    {
-	//        compare = hCost.CompareTo(nodeToCompare.hCost);
-	//    }
-
-	//    return -compare;
-	//}
 
 	public int CompareTo(Node nodeToCompare)
 	{

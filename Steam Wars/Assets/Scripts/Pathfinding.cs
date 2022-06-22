@@ -23,7 +23,7 @@ public class Pathfinding : MonoBehaviour
 
 	}
 
-	public List<Vector3> FindPath(Vector3 startPos, Vector3 targetPos, bool simplify)
+	public List<Vector3> FindPath(Vector3 startPos, Vector3 targetPos, bool simplify, bool inclWalkable)
 	{
 
 		Node startNode = grid.NodeFromWorldPoint(startPos);
@@ -46,9 +46,20 @@ public class Pathfinding : MonoBehaviour
 
 			foreach (Node neighbour in grid.GetNeighbours(currentNode))
 			{
-				if (!neighbour.walkable || closedSet.Contains(neighbour))
-				{
-					continue;
+
+				if(inclWalkable)
+                {
+					if (!neighbour.walkable || closedSet.Contains(neighbour))
+					{
+						continue;
+					}
+				}
+                else
+                {
+					if (closedSet.Contains(neighbour))
+					{
+						continue;
+					}
 				}
 
 				int newMovementCostToNeighbour = currentNode.gCost + GetDistance(currentNode, neighbour);
