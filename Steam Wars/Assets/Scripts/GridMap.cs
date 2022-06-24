@@ -27,11 +27,6 @@ public class GridMap : MonoBehaviour
 		CreateGrid();
 	}
 
-	private void FixedUpdate()
-	{
-
-	}
-
 	public int MaxSize
 	{
 		get

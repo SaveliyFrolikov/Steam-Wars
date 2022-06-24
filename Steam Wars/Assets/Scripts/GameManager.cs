@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using TMPro;
 
@@ -8,6 +7,8 @@ public class GameManager : MonoBehaviour
 {
     List<Node> validCells;
     List<Node> debugList;
+    List<Node> validStartsTeam1;
+    List<Node> validStartsTeam2;
 
     public ParticleSystem smoke;
 
@@ -17,8 +18,11 @@ public class GameManager : MonoBehaviour
 
     public GameObject destroyedTree;
     public GameObject destroyedTrain;
+    public GameObject rocket;
 
     public bool canSeeUnit;
+
+    Vector3 clickedNode;
 
     bool zoom;
 
@@ -61,16 +65,17 @@ public class GameManager : MonoBehaviour
         validCells = new List<Node>();
         debugList = new List<Node>();
         visibleCells = new List<Node>();
+        validStartsTeam1 = new List<Node>();
+        validStartsTeam2 = new List<Node>();
         zoom = false;
     }
-
-    
 
     private void Start()
     {
         ResetMaterials();
         Numbers();
         ExtraObjects();
+        RandomPositions();
     }
 
     private void ResetMaterials()
@@ -194,6 +199,35 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void RandomPositions()
+    {
+        foreach (Node node in grid.grid)
+        {
+            if(node.gridY < 23)
+            {
+                validStartsTeam1.Add(node);
+            }
+            else if(node.gridY > 36)
+            {
+                validStartsTeam2.Add(node);
+            }
+        }
+
+        foreach (Unit unit in allUnits)
+        {
+            if(unit.teamID == 0)
+            {
+                int random = Random.Range(0, validStartsTeam1.Count);
+                unit.transform.position = new Vector3(validStartsTeam1[random].worldPosition.x, unit.transform.position.y, validStartsTeam1[random].worldPosition.z);
+            }
+            else
+            {
+                int random = Random.Range(0, validStartsTeam2.Count);
+                unit.transform.position = new Vector3(validStartsTeam2[random].worldPosition.x, unit.transform.position.y, validStartsTeam2[random].worldPosition.z);
+            }
+        }
+    }
+
     public void ResetFog()
     {
         for (int x = 0; x < grid.gridWorldSize.x; x++)
@@ -297,8 +331,6 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-
-        
     }
 
     public void UpdateShootPositions()
@@ -336,8 +368,6 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-
-        
     }
     
     private void Update()
@@ -378,12 +408,15 @@ public class GameManager : MonoBehaviour
 
                     if (Physics.Raycast(ray, out RaycastHit hit))
                     {
-                        if (Input.GetMouseButtonDown(0))// && delay < 0)
+                        if (Input.GetMouseButtonDown(0))
                         {
+                            
+
                             Node clickedNode = grid.NodeFromWorldPoint(hit.point);
 
                             if (clickedNode.valid && !unit.hasMoved)
                             {
+                                Debug.Log("s");
                                 GameObject cell = grid.CellFromWorldPoint(hit.point);
                                 unit.target.position = cell.transform.position;
                                 grid.NodeFromWorldPoint(hit.point);
@@ -396,39 +429,19 @@ public class GameManager : MonoBehaviour
                                 ResetMaterials();
                                 Shoot(hit.point);
 
-                                bool missed = true;
-
-                                foreach(Node node in debugList)
+                                if(unit.unitType == 1)
                                 {
-                                    if(node.unit != null)
-                                    {
-                                        if(node.unit.teamID == 1)
-                                        {
-                                            missed = false;
-                                            if(node.unit.lives > 0)
-                                            {
-                                                stateText.GetComponent<TextMeshProUGUI>().text = "Hit";
-                                            }
-                                            else
-                                            {
-                                                stateText.GetComponent<TextMeshProUGUI>().text = "Killed";
-                                            }
-                                        }
-                                    }
+                                    Invoke("AfterShot", 5f);
                                 }
-
-                                if(missed)
+                                else if(unit.unitType == 2)
                                 {
-                                    stateText.GetComponent<TextMeshProUGUI>().text = "Missed";
+                                    Invoke("AfterShot", 2.5f);
                                 }
-
-                                unit.hasMoved = true;
-                                unit.hasShot = true;
-                                TurnManager.Instance.NextUnit();
-                                UnityEngine.Debug.Log("Attack!");
-                                CameraController.Instance.followTransform = null;
-                                CameraController.Instance.newPos = Vector3.zero;
-                                unit.isSelected = false;
+                                else if (unit.unitType == 2)
+                                {
+                                    Invoke("AfterShot", 2.5f);
+                                }
+                                //AfterShot();
                             }
                         }
                     }
@@ -459,13 +472,44 @@ public class GameManager : MonoBehaviour
                                 }
                             }
 
-                            for (int x = 0; x <= 1; x++)
+                            if (unit.unitType == 1)
                             {
-                                for (int y = 0; y <= 1; y++)
+                                Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x, 0, hit.point.z));
+                                allValid = allValid && node.shootValid;
+                            }
+
+                            if (unit.unitType == 2)
+                            {
+                                for (int x = 0; x <= 1; x++)
                                 {
-                                    Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
-                                    allValid = allValid && node.shootValid;
+                                    for (int y = 0; y <= 1; y++)
+                                    {
+                                        Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
+                                        allValid = allValid && node.shootValid;
+                                    }
                                 }
+                            }
+
+                            if (unit.unitType == 3)
+                            {
+                                for (int x = -1; x <= 1; x++)
+                                {
+                                    for (int y = -1; y <= 1; y++)
+                                    {
+                                        Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
+                                        allValid = allValid && node.shootValid;
+                                    }
+                                }
+                            }
+
+
+
+                            if (unit.unitType == 1 && allValid)
+                            {
+                                GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x, 0, hit.point.z));
+                                cell.GetComponent<MeshRenderer>().material = shot;
+                                GameObject fog = cell.transform.GetChild(0).gameObject;
+                                fog.GetComponent<MeshRenderer>().material = fogShot;
                             }
 
                             if (unit.unitType == 2 && allValid)
@@ -473,6 +517,20 @@ public class GameManager : MonoBehaviour
                                 for (int x = 0; x <= 1; x++)
                                 {
                                     for (int y = 0; y <= 1; y++)
+                                    {
+                                        GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
+                                        cell.GetComponent<MeshRenderer>().material = shot;
+                                        GameObject fog = cell.transform.GetChild(0).gameObject;
+                                        fog.GetComponent<MeshRenderer>().material = fogShot;
+                                    }
+                                }
+                            }
+
+                            if (unit.unitType == 3 && allValid)
+                            {
+                                for (int x = -1; x <= 1; x++)
+                                {
+                                    for (int y = -1; y <= 1; y++)
                                     {
                                         GameObject cell = grid.CellFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
                                         cell.GetComponent<MeshRenderer>().material = shot;
@@ -561,6 +619,16 @@ public class GameManager : MonoBehaviour
 
                         allValid = true;
 
+                        if (unit.unitType == 1)
+                        {
+                            Node node = grid.NodeFromWorldPoint(new Vector3(randomPos.x, 0, randomPos.z));
+
+                            if (node != null)
+                            {
+                                allValid = allValid && node.shootValid;
+                            }
+                        }
+
                         if (unit.unitType == 2)
                         {
                             for (int x = 0; x <= 1; x++)
@@ -583,6 +651,28 @@ public class GameManager : MonoBehaviour
                             }
                         }
 
+                        if (unit.unitType == 3)
+                        {
+                            for (int x = -1; x <= 1; x++)
+                            {
+                                for (int y = -1; y <= 1; y++)
+                                {
+                                    Node node = grid.NodeFromWorldPoint(new Vector3(randomPos.x + x, 0, randomPos.z + y));
+
+                                    if (node != null)
+                                    {
+                                        allValid = allValid && node.shootValid;
+                                    }
+                                    else if (node == null && canSeeUnit)
+                                    {
+                                        randomPos = new Vector3(randomPos.x - 2, 0, randomPos.z - 2);
+                                        x = -1;
+                                        y = -1;
+                                    }
+                                }
+                            }
+                        }
+
                         if (allValid)
                         {
                             Shoot(randomPos);
@@ -600,11 +690,27 @@ public class GameManager : MonoBehaviour
 
     void Shoot(Vector3 clickedPos)
     {
-        unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+        
         debugList.Clear();
+        clickedNode = clickedPos;
+
+        if (unit.unitType == 1)
+        {
+            unit.transform.LookAt(new Vector3(Random.Range(-25, 26), transform.position.y, Random.Range(-25, 26)));
+
+            GameObject cell = grid.CellFromWorldPoint(new Vector3(clickedPos.x, 0, clickedPos.z));
+
+            GameObject unitRocket = unit.transform.GetChild(3).gameObject;
+            unitRocket.GetComponent<Rocket>().Fly(cell.transform.position);
+
+            Invoke("RocketShoot", 1f);
+        }
+
 
         if (unit.unitType == 2)
         {
+            unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+
             for (int x = 0; x <= 1; x++)
             {
                 for (int y = 0; y <= 1; y++)
@@ -612,7 +718,7 @@ public class GameManager : MonoBehaviour
                     GameObject cell = grid.CellFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
                     Node node = grid.NodeFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
                     cell.GetComponent<MeshRenderer>().material = shot;
-                    GameObject fog = grid.cells[x, y].transform.GetChild(0).gameObject;
+                    GameObject fog = cell.transform.GetChild(0).gameObject;
                     fog.GetComponent<MeshRenderer>().material = fogShot;
                     if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= unit.damage;
                     debugList.Add(node);
@@ -636,6 +742,45 @@ public class GameManager : MonoBehaviour
                     }
 
                     unit.transform.GetChild(4).GetComponent<ParticleSystem>().Play();
+                }
+            }
+        }
+        
+        if (unit.unitType == 3)
+        {
+            unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    GameObject cell = grid.CellFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
+                    Node node = grid.NodeFromWorldPoint(new Vector3(clickedPos.x + x, 0, clickedPos.z + y));
+                    cell.GetComponent<MeshRenderer>().material = shot;
+                    GameObject fog = cell.transform.GetChild(0).gameObject;
+                    fog.GetComponent<MeshRenderer>().material = fogShot;
+                    if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= unit.damage;
+                    debugList.Add(node);
+                    Instantiate(smoke, cell.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+
+                    if (node.extra == 1 || node.extra == 2)
+                    {
+                        node.walkable = true;
+                        GameObject explosion = Instantiate(destroyedTree);
+                        explosion.transform.parent = cell.transform;
+                        explosion.transform.position = cell.transform.GetChild(1).position;
+                        cell.transform.GetChild(1).gameObject.SetActive(false);
+                    }
+                    else if (node.extra == 3)
+                    {
+                        node.walkable = true;
+                        GameObject explosion = Instantiate(destroyedTrain);
+                        explosion.transform.parent = cell.transform;
+                        explosion.transform.position = cell.transform.GetChild(2).position;
+                        cell.transform.GetChild(2).gameObject.SetActive(false);
+                    }
+
+                    //unit.transform.GetChild(4).GetComponent<ParticleSystem>().Play();
                 }
             }
         }
@@ -693,6 +838,70 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    
-}
+    void RocketShoot()
+    {
+        GameObject cell = grid.CellFromWorldPoint(new Vector3(clickedNode.x, 0, clickedNode.z));
+        Node node = grid.NodeFromWorldPoint(new Vector3(clickedNode.x, 0, clickedNode.z));
 
+        cell.GetComponent<MeshRenderer>().material = shot;
+        GameObject fog = cell.transform.GetChild(0).gameObject;
+        fog.GetComponent<MeshRenderer>().material = fogShot;
+        if (node.unit != null && unit.IsEnemy(node.unit)) node.unit.lives -= unit.damage;
+        debugList.Add(node);
+        Instantiate(smoke, cell.transform.position, Quaternion.Euler(new Vector3(-90, 0, 0)));
+
+        if (node.extra == 1 || node.extra == 2)
+        {
+            node.walkable = true;
+            GameObject explosion = Instantiate(destroyedTree);
+            explosion.transform.parent = cell.transform;
+            explosion.transform.position = cell.transform.GetChild(1).position;
+            cell.transform.GetChild(1).gameObject.SetActive(false);
+        }
+        else if (node.extra == 3)
+        {
+            node.walkable = true;
+            GameObject explosion = Instantiate(destroyedTrain);
+            explosion.transform.parent = cell.transform;
+            explosion.transform.position = cell.transform.GetChild(2).position;
+            cell.transform.GetChild(2).gameObject.SetActive(false);
+        }
+    }
+
+    void AfterShot()
+    {
+        bool missed = true;
+
+        foreach (Node node in debugList)
+        {
+            if (node.unit != null)
+            {
+                if (node.unit.teamID == 1)
+                {
+                    missed = false;
+                    if (node.unit.lives > 0)
+                    {
+                        stateText.GetComponent<TextMeshProUGUI>().text = "Hit";
+                    }
+                    else
+                    {
+                        stateText.GetComponent<TextMeshProUGUI>().text = "Killed";
+                    }
+                }
+            }
+        }
+
+        if (missed)
+        {
+            stateText.GetComponent<TextMeshProUGUI>().text = "Missed";
+        }
+
+        unit.hasMoved = true;
+        unit.hasShot = true;
+        TurnManager.Instance.NextUnit();
+        UnityEngine.Debug.Log("Attack!");
+        CameraController.Instance.followTransform = null;
+        CameraController.Instance.newPos = Vector3.zero;
+        unit.isSelected = false;
+    }
+}
