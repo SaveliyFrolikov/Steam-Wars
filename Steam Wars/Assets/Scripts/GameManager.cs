@@ -203,13 +203,16 @@ public class GameManager : MonoBehaviour
     {
         foreach (Node node in grid.grid)
         {
-            if(node.gridY < 23)
+            if (node.gridX > 0 && node.gridX < 50)
             {
-                validStartsTeam1.Add(node);
-            }
-            else if(node.gridY > 36)
-            {
-                validStartsTeam2.Add(node);
+                if (node.gridY < 23 && node.gridY > 0)
+                {
+                    validStartsTeam1.Add(node);
+                }
+                else if (node.gridY > 36 && node.gridY < 50)
+                {
+                    validStartsTeam2.Add(node);
+                }
             }
         }
 
@@ -251,7 +254,10 @@ public class GameManager : MonoBehaviour
 
     public void CheckForVisibility()
     {
-        //ResetFog();
+        if(MainMenu.Instance.difficulty.value == 1)
+        {
+            ResetFog();
+        }
 
         visibleCells.Clear();
 
@@ -422,20 +428,20 @@ public class GameManager : MonoBehaviour
                                 zoom = false;
                             }
 
-                            if (allValid && unit.hasMoved && !unit.hasShot)
+                            if (allValid && unit.hasMoved && !unit.hasShot && clickedNode.shootValid)
                             {
                                 ResetMaterials();
                                 Shoot(hit.point);
 
                                 if(unit.unitType == 1)
                                 {
-                                    Invoke("AfterShot", 5f);
+                                    Invoke("AfterShot", 7f);
                                 }
                                 else if(unit.unitType == 2)
                                 {
                                     Invoke("AfterShot", 2.5f);
                                 }
-                                else if (unit.unitType == 2)
+                                else if (unit.unitType == 3)
                                 {
                                     Invoke("AfterShot", 2.5f);
                                 }
@@ -485,7 +491,11 @@ public class GameManager : MonoBehaviour
                                     for (int y = 0; y <= 1; y++)
                                     {
                                         Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
-                                        allValid = allValid && node.shootValid;
+                                        if(!node.shootValid)
+                                        {
+                                            allValid = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -497,12 +507,14 @@ public class GameManager : MonoBehaviour
                                     for (int y = -1; y <= 1; y++)
                                     {
                                         Node node = grid.NodeFromWorldPoint(new Vector3(hit.point.x + x, 0, hit.point.z + y));
-                                        allValid = allValid && node.shootValid;
+                                        if (!node.shootValid)
+                                        {
+                                            allValid = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
-
-
 
                             if (unit.unitType == 1 && allValid)
                             {
@@ -559,7 +571,7 @@ public class GameManager : MonoBehaviour
 
                 if(!unit.isMoving && unit.isSelected && delay < 0)
                 {
-                    delay = 1;
+                    delay = 5;
 
                     if (!unit.hasMoved)
                     {
@@ -641,12 +653,6 @@ public class GameManager : MonoBehaviour
                                     {
                                         allValid = allValid && node.shootValid;
                                     }
-                                    else if (node == null && canSeeUnit)
-                                    {
-                                        randomPos = new Vector3(randomPos.x - 1, 0, randomPos.z - 1);
-                                        x = 0;
-                                        y = 0;
-                                    }
                                 }
                             }
                         }
@@ -663,12 +669,6 @@ public class GameManager : MonoBehaviour
                                     {
                                         allValid = allValid && node.shootValid;
                                     }
-                                    else if (node == null && canSeeUnit)
-                                    {
-                                        randomPos = new Vector3(randomPos.x - 2, 0, randomPos.z - 2);
-                                        x = -1;
-                                        y = -1;
-                                    }
                                 }
                             }
                         }
@@ -679,7 +679,7 @@ public class GameManager : MonoBehaviour
                             unit.hasMoved = true;
                             unit.hasShot = true;
                             TurnManager.Instance.NextUnit();
-                            UnityEngine.Debug.Log("Attack!");
+                            Debug.Log("Attack!");
                             unit.isSelected = false;
                         }
                     }
@@ -690,7 +690,6 @@ public class GameManager : MonoBehaviour
 
     void Shoot(Vector3 clickedPos)
     {
-        
         debugList.Clear();
         clickedNode = clickedPos;
 
@@ -703,6 +702,8 @@ public class GameManager : MonoBehaviour
             GameObject unitRocket = unit.transform.GetChild(3).gameObject;
             unitRocket.GetComponent<Rocket>().Fly(cell.transform.position);
 
+            SoundManager.Instance.SpiderShoot();
+
             Invoke("RocketShoot", 2f);
         }
 
@@ -710,6 +711,7 @@ public class GameManager : MonoBehaviour
         if (unit.unitType == 2)
         {
             unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+            SoundManager.Instance.TankShoot();
 
             for (int x = 0; x <= 1; x++)
             {
@@ -749,6 +751,7 @@ public class GameManager : MonoBehaviour
         if (unit.unitType == 3)
         {
             unit.transform.LookAt(new Vector3(clickedPos.x, transform.position.y, clickedPos.z));
+            SoundManager.Instance.MortarShoot();
 
             for (int x = -1; x <= 1; x++)
             {
@@ -799,6 +802,7 @@ public class GameManager : MonoBehaviour
         TurnManager.Instance.NextUnit();
         CameraController.Instance.followTransform = null;
         CameraController.Instance.newPos = Vector3.zero;
+        CameraController.Instance.newZoom = new Vector3(0, 36.86602f, -24.57735f);
         unit.isSelected = false;
     }
 
@@ -882,10 +886,13 @@ public class GameManager : MonoBehaviour
                     if (node.unit.lives > 0)
                     {
                         stateText.GetComponent<TextMeshProUGUI>().text = "Hit";
+                        GetComponent<SoundManager>().PlayHit();
                     }
-                    else
+                    else if(node.unit.lives <= 0)
                     {
+                         
                         stateText.GetComponent<TextMeshProUGUI>().text = "Killed";
+                        GetComponent<SoundManager>().PlayDestroyed();
                     }
                 }
             }
@@ -894,12 +901,13 @@ public class GameManager : MonoBehaviour
         if (missed)
         {
             stateText.GetComponent<TextMeshProUGUI>().text = "Missed";
+            GetComponent<SoundManager>().PlayMissed();
         }
 
         unit.hasMoved = true;
         unit.hasShot = true;
         TurnManager.Instance.NextUnit();
-        UnityEngine.Debug.Log("Attack!");
+        Debug.Log("Attack!");
         CameraController.Instance.followTransform = null;
         CameraController.Instance.newPos = Vector3.zero;
         unit.isSelected = false;

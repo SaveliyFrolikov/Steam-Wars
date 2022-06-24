@@ -65,20 +65,7 @@ public class Unit : MonoBehaviour
 
 		if(lives <= 0)
         {
-			GameManager.Instance.allUnits.Remove(this);
-			TurnManager.Instance.allUnits.Remove(this);
-
-			if(teamID == 0)
-            {
-				TurnManager.Instance.team1.Remove(this);
-            }
-            else
-            {
-				TurnManager.Instance.team2.Remove(this);
-			}
-
-			Instantiate(destroyedVersion, transform.position, transform.rotation);
-			Destroy(gameObject);
+			Invoke("Die", 5);
 		}
 		
 	}
@@ -119,5 +106,23 @@ public class Unit : MonoBehaviour
 		{
 			return true;
 		}
+	}
+
+	void Die()
+    {
+		GameManager.Instance.allUnits.Remove(this);
+		TurnManager.Instance.allUnits.Remove(this);
+
+		if (teamID == 0)
+		{
+			TurnManager.Instance.team1.Remove(this);
+		}
+		else
+		{
+			TurnManager.Instance.team2.Remove(this);
+		}
+
+		Instantiate(destroyedVersion, transform.position, transform.rotation);
+		Destroy(gameObject);
 	}
 }

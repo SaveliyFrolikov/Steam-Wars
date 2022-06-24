@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class TurnManager : MonoBehaviour
 {
@@ -20,11 +21,23 @@ public class TurnManager : MonoBehaviour
 
     bool teamChanged;
 
+    public GameObject finish;
+    public GameObject win;
+    public GameObject lose;
+
+    bool isFinish;
 
     private void Start()
     {
+        Time.timeScale = 1;
+
         Instance = this;
         currentUnit = null;
+        isFinish = false;
+
+        finish.SetActive(false);
+        lose.SetActive(false);
+        win.SetActive(false);
 
         team1 = new List<Unit>();
         team2 = new List<Unit>();
@@ -44,13 +57,23 @@ public class TurnManager : MonoBehaviour
 
     private void Update()
     {
-        if (team1.Count == 0)
+        if (team1.Count == 0 && !isFinish)
         {
             Debug.Log("YOU LOST");
+            //Time.timeScale = 0;
+            finish.SetActive(true);
+            lose.SetActive(true);
+            SoundManager.Instance.PlayLose();
+            isFinish = true;
         }
-        else if (team2.Count == 0)
+        else if (team2.Count == 0 && !isFinish)
         {
             Debug.Log("YOU WON");
+            //Time.timeScale = 0;
+            finish.SetActive(true);
+            win.SetActive(true);
+            SoundManager.Instance.PlayWin();
+            isFinish = true;
         }
 
         if (currentUnit == null)
@@ -71,19 +94,8 @@ public class TurnManager : MonoBehaviour
 
         if(TeamMoved(team1) && TeamMoved(team2))
         {
-            foreach(Unit unit in allUnits)
-            {
-                unit.hasMoved = false;
-                unit.hasShot = false;
-                unit.isSelected = false;
-            }
-
-            turn++;
-            unitID = 0;
-            currentUnit = team1[unitID];
-            currentUnit.isSelected = true;
-            currentTeam = 1;
-            teamChanged = false;
+            //Invoke("NextTurn", 2);
+            NextTurn();
         }
     }
 
@@ -111,15 +123,12 @@ public class TurnManager : MonoBehaviour
         {
             if(unitID >= team1.Count)
             {
-                Debug.Log("2");
                 currentUnit.isSelected = false;
                 currentUnit = team2[0];
                 currentUnit.isSelected = true;
             }
             else
             {
-
-                Debug.Log("1");
                 currentUnit.isSelected = false;
                 currentUnit = team1[unitID];
                 currentUnit.isSelected = true;
@@ -129,9 +138,8 @@ public class TurnManager : MonoBehaviour
         {
             if (unitID >= team2.Count)
             {
-                currentUnit.isSelected = false;
-                currentUnit = team1[0];
-                currentUnit.isSelected = true;
+                //Invoke("NextTurn2", 2);
+                NextTurn2();
             }
             else
             {
@@ -140,5 +148,39 @@ public class TurnManager : MonoBehaviour
                 currentUnit.isSelected = true;
             }
         }
+    }
+
+    void NextTurn()
+    {
+        foreach (Unit unit in allUnits)
+        {
+            unit.hasMoved = false;
+            unit.hasShot = false;
+            unit.isSelected = false;
+        }
+
+        turn++;
+        unitID = 0;
+        currentUnit = team1[unitID];
+        currentUnit.isSelected = true;
+        currentTeam = 1;
+        teamChanged = false;
+    }
+
+    void NextTurn2()
+    {
+        currentUnit.isSelected = false;
+        currentUnit = team1[0];
+        currentUnit.isSelected = true;
+    }
+
+    public void Rematch()
+    {
+        SceneManager.LoadScene(1);
+    }
+
+    public void MainMenu()
+    {
+        SceneManager.LoadScene(0);
     }
 }

@@ -31,6 +31,8 @@ public class MainMenu : MonoBehaviour
 
     AudioSource sfxSource;
 
+    public static MainMenu Instance;
+
     bool settings = false;
     bool about = false;
     bool instructions = false;
@@ -39,6 +41,7 @@ public class MainMenu : MonoBehaviour
 
     void Start()
     {
+        Instance = this;
         sfxSource = GetComponent<AudioSource>();
         currentWaypoint = waypoints[0].position;
     }
