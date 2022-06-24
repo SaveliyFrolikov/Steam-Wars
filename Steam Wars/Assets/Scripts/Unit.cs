@@ -58,12 +58,7 @@ public class Unit : MonoBehaviour
     {
 		animator.SetBool("isMoving", isMoving);
 
-		if(Input.GetKeyDown(KeyCode.Escape))
-        {
-			isSelected = false;
-        }
-
-		if (isSelected && teamID == 0)
+		if (isSelected && teamID == 0 && !hasMoved)
 		{
 			CameraController.Instance.followTransform = transform;
 		}

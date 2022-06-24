@@ -15,7 +15,6 @@ public class Satellite : MonoBehaviour
     int currentTurn;
 
     bool isScanning = false;
-    bool stop = false;
     
     void Start()
     {
@@ -67,7 +66,6 @@ public class Satellite : MonoBehaviour
     public void Close()
     {
         currentTurn = -5;
-        stop = true;
         isScanning = false;
         satelliteImage.SetActive(false);
     }

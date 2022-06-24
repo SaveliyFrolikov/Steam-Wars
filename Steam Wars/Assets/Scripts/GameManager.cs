@@ -157,7 +157,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < grid.gridWorldSize.x; i++)
         {
             GameObject newNumber = Instantiate(number);
-            newNumber.transform.parent = numberParent.transform;
+            newNumber.transform.SetParent(numberParent.transform);
             newNumber.GetComponent<TextMeshPro>().text = (i + 1).ToString();
             newNumber.transform.position = new Vector3(-24.5f + i, 2, -26);
         }
@@ -165,7 +165,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < grid.gridWorldSize.y; i++)
         {
             GameObject newNumber = Instantiate(number);
-            newNumber.transform.parent = numberParent.transform;
+            newNumber.transform.SetParent(numberParent.transform);
             newNumber.GetComponent<TextMeshPro>().text = (i + 1).ToString();
             newNumber.transform.position = new Vector3(-26, 2, -24.5f + i);
         }
@@ -410,8 +410,6 @@ public class GameManager : MonoBehaviour
                     {
                         if (Input.GetMouseButtonDown(0))
                         {
-                            
-
                             Node clickedNode = grid.NodeFromWorldPoint(hit.point);
 
                             if (clickedNode.valid && !unit.hasMoved)
@@ -451,7 +449,9 @@ public class GameManager : MonoBehaviour
                         Node sNode = grid.NodeFromWorldPoint(hit.point);
                         if(!zoom)
                         {
-                            CameraController.Instance.newZoom = new Vector3(0, 28.38443f, -18.92296f);
+                            CameraController.Instance.followTransform = null;
+                            CameraController.Instance.newPos = Vector3.zero;
+                            CameraController.Instance.newZoom = new Vector3(0, 36.86602f, -24.57735f);
                             zoom = true;
                         }
 
@@ -545,7 +545,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                UnityEngine.Debug.Log("Enemy Turn");
+                Debug.Log("Enemy Turn");
                 CameraController.Instance.followTransform = null;
                 CameraController.Instance.newPos = Vector3.zero;
 
@@ -703,7 +703,7 @@ public class GameManager : MonoBehaviour
             GameObject unitRocket = unit.transform.GetChild(3).gameObject;
             unitRocket.GetComponent<Rocket>().Fly(cell.transform.position);
 
-            Invoke("RocketShoot", 1f);
+            Invoke("RocketShoot", 2f);
         }
 
 
